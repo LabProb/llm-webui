@@ -1,0 +1,13 @@
+# Віртуальне оточення
+.venv/
+
+# Python cache
+__pycache__/
+app/__pycache__/
+app/llm/__pycache__/
+app/routes/__pycache__/
+app/services/__pycache__/
+
+# Моделі, але зберегти папку models
+models/*
+!models/.gitkeep
