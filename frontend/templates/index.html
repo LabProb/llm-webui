@@ -1,0 +1,182 @@
+<!-- frontend/templates/index.html -->
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Text generator</title>
+
+  <!-- основний CSS -->
+  <link rel="stylesheet" href="/static/style.css" />
+
+  <!-- highlight.js theme -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css"
+  />
+</head>
+<body>
+  <button class="toggle-theme" id="themeToggle">🌙</button>
+  <div class="container">
+    <h3>LLM test</h3>
+    <div class="flex">
+      <div class="column form">
+        <form method="post" action="/generate" id="genForm">
+          <label for="model">Select a model:</label>
+          <select id="model" name="model">
+            {% for m in models %}
+              <option value="{{ m }}" {% if m == selected_model %}selected{% endif %}>
+                {{ m }}
+              </option>
+            {% endfor %}
+          </select>
+
+          <label for="prompt">Prompt:</label>
+          <textarea
+            id="prompt"
+            name="prompt"
+            class="input-area"
+            required
+          >{{ prompt }}</textarea>
+
+          <label for="max_tokens">Max tokens (1–2048):</label>
+          <input
+            type="number"
+            id="max_tokens"
+            name="max_tokens"
+            min="1"
+            max="2048"
+            step="1"
+            value="{{ max_tokens }}"
+          />
+
+          <label for="temperature">Temperature (0.0–2.0):</label>
+          <input
+            type="number"
+            id="temperature"
+            name="temperature"
+            step="0.01"
+            min="0"
+            max="2"
+            value="{{ temperature }}"
+          />
+
+          <label for="top_p">Top-p (0.0–1.0):</label>
+          <input
+            type="number"
+            id="top_p"
+            name="top_p"
+            step="0.01"
+            min="0"
+            max="1"
+            value="{{ top_p }}"
+          />
+
+          <label for="repeat_penalty">Repeat Penalty (1.0–2.0):</label>
+          <input
+            type="number"
+            id="repeat_penalty"
+            name="repeat_penalty"
+            step="0.01"
+            min="1"
+            max="2"
+            value="{{ repeat_penalty }}"
+          />
+
+          <div class="buttons">
+            <button type="submit">Launch</button>
+            <button type="button" id="resetDefaults">Reset to default</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="column response">
+        {% if response %}
+          <h3>Reply:</h3>
+          <div class="response-block">
+              <button
+                class="copy-btn"
+                onclick="copyCodeBlocks()"
+                style="display: none;">
+                 Copy code
+              </button>
+            <div id="responseHtml" class="markdown-body"></div>
+          </div>
+        {% endif %}
+        {% if tokens %}<p>Tokens: {{ tokens }}</p>{% endif %}
+        {% if duration %}<p>Duration: {{ duration }}s</p>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- marked.js для Markdown → HTML -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+  <!-- highlight.js для підсвітки коду -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+  <script>
+    (function(){
+      // 1. Reset defaults
+      const defaults = {
+        max_tokens: {{ defaults.max_tokens }},
+        temperature: {{ defaults.temperature }},
+        top_p: {{ defaults.top_p }},
+        repeat_penalty: {{ defaults.repeat_penalty }}
+      };
+      document.getElementById('resetDefaults').addEventListener('click', () => {
+        Object.keys(defaults).forEach(key => {
+          document.getElementById(key).value = defaults[key];
+        });
+      });
+
+      // 2. Theme toggle
+      const btn = document.getElementById("themeToggle");
+      if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
+        btn.textContent = "☀️";
+      }
+      btn.addEventListener("click", () => {
+        const isDark = document.body.classList.toggle("dark");
+        btn.textContent = isDark ? "☀️" : "🌙";
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+      });
+    })();
+
+    // 3. Markdown → HTML + highlight
+    (function renderResponse(){
+      {% if response %}
+      const raw = {{ response | tojson }};
+      const html = marked.parse(raw, {
+        highlight: (code, lang) =>
+          hljs.highlight(code, { language: lang || 'plaintext' }).value
+      });
+      const container = document.getElementById('responseHtml');
+      container.innerHTML = html;
+      hljs.highlightAll();
+
+      // Тут перевіряємо, чи є <pre><code>
+      const codeBlocks = container.querySelectorAll('pre code');
+      const copyBtn    = document.querySelector('.copy-btn');
+      if (codeBlocks.length > 0) {
+        copyBtn.style.display = 'block';
+      }
+      {% endif %}
+    })();
+
+    // 4. Copy only code blocks
+    function copyCodeBlocks() {
+      const codes = Array.from(
+        document.querySelectorAll('#responseHtml pre code')
+      );
+      if (!codes.length) {
+        alert('No code blocks to copy');
+        return;
+      }
+      const text = codes
+        .map(el => el.textContent.trim())
+        .join('\n\n');
+      navigator.clipboard.writeText(text)
+        .then(() => alert('Code copied to clipboard!'));
+    }
+  </script>
+</body>
+</html>
