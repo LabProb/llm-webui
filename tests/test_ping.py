@@ -1,15 +1,17 @@
-# tests/test_ping.py
-import requests
+import asyncio
+
+import httpx
+
+from app.main import app
+
 
 def test_ping():
-    url = "http://127.0.0.1:8000/ping"
-    try:
-        response = requests.get(url, timeout=5)
-        print(f"Status code: {response.status_code}")
-        print(f"Content-Type: {response.headers.get('content-type')}")
-        print(f"Response JSON: {response.json()}")
-    except Exception as e:
-        print(f"Error: {e}")
+    async def request():
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.get("/ping")
 
-if __name__ == "__main__":
-    test_ping()
+    response = asyncio.run(request())
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}

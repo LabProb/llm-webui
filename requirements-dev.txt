@@ -1,5 +1,4 @@
-pytest
-httpx
-requests
-ruff
-coverage
+pytest==9.0.2
+httpx==0.28.1
+ruff==0.15.5
+coverage==7.13.4

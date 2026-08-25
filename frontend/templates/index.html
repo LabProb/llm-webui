@@ -110,6 +110,7 @@
 
   <!-- marked.js для Markdown → HTML -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js"></script>
   <!-- highlight.js для підсвітки коду -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
 
@@ -150,7 +151,7 @@
           hljs.highlight(code, { language: lang || 'plaintext' }).value
       });
       const container = document.getElementById('responseHtml');
-      container.innerHTML = html;
+      container.innerHTML = DOMPurify.sanitize(html);
       hljs.highlightAll();
 
       // Тут перевіряємо, чи є <pre><code>

@@ -1,5 +1,7 @@
 # app/llm/llama_wrapper.py
 import logging
+from threading import Lock
+
 from llama_cpp import Llama
 from app.config import settings
 
@@ -17,6 +19,7 @@ class LlamaModel:
             n_ctx=settings.n_ctx,
             verbose=False
         )
+        self._lock = Lock()
 
     def generate(
         self,
@@ -36,7 +39,8 @@ class LlamaModel:
             "repeat_penalty": repeat_penalty,
             "echo": False
         }
-        output = self.llm(**args)
+        with self._lock:
+            output = self.llm(**args)
         text = output["choices"][0]["text"].strip().lstrip(":* \n")
         tokens = output.get("usage", {}).get("total_tokens", 0)
         logging.info(f"Prompt: {prompt[:50]}… → Tokens: {tokens}")
