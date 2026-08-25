@@ -4,6 +4,9 @@ from pathlib import Path
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_MODEL_DIR = PROJECT_ROOT / "models"
+
 
 class Settings(BaseSettings):
     # Якщо ENV-перемінних з префіксом не потрібно — залишаємо порожній рядок
@@ -12,10 +15,10 @@ class Settings(BaseSettings):
         env_file=".env",    # автопідхват змінних із .env (опціонально)
     )
 
-    model_dir: Path = Field(default=Path("models"))
+    model_dir: Path = Field(default=DEFAULT_MODEL_DIR)
     model_name: str | None = None
     n_ctx: int = 2048
-    frontend_path: Path = Path("frontend/index.html")
+    frontend_path: Path = PROJECT_ROOT / "frontend/index.html"
 
     @model_validator(mode="before")
     @classmethod
@@ -23,7 +26,7 @@ class Settings(BaseSettings):
         if values.get("model_name"):
             return values
 
-        dir_path = Path(values.get("model_dir", Path("models")))
+        dir_path = Path(values.get("model_dir", DEFAULT_MODEL_DIR))
         candidates = sorted(dir_path.glob("*.gguf"))
         if not candidates:
             raise RuntimeError(f"No .gguf files found in {dir_path!r}")
